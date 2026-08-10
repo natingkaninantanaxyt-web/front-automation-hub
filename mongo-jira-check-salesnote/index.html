@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- Bump this alongside VERSION/SCRIPT_VERSION on every release — the page-version-check
+         script below compares it against the live VERSION file to auto-recover from a stale
+         cached copy of THIS page (the meta tags above are a weak hint at best; browsers mostly
+         ignore http-equiv Cache-Control for normal navigation, so this is the real fix). -->
+    <meta name="page-version" content="1.0.1">
+    <title>SN · Sale Note Check</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Inter,Arial,sans-serif' font-weight='700' font-size='24' fill='white' letter-spacing='-1'%3ESN%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../shared/theme.css">
+    <style>
+        /* .page/.back-link/.page-header/.page-icon/.toast/.card/.card-header/.card-body/.step-num/.card-desc live in /shared/theme.css */
+
+        .page-wide {
+            max-width: 1140px;
+        }
+
+        .card {
+            margin-top: 24px;
+        }
+
+        .tab-pane {
+            display: none;
+            flex-direction: column;
+            animation: fadeIn var(--transition-speed) ease-in-out;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        .tab-pane .card:first-child {
+            margin-top: 24px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .checklist {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .checklist li i {
+            color: var(--success);
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .checklist code {
+            background: var(--bg-recessed);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        /* .btn-primary lives in /shared/theme.css */
+
+        .cmd-block {
+            position: relative;
+            background: #0f172a;
+            border-radius: var(--radius-md);
+            padding: 14px 44px 14px 16px;
+            margin-top: 10px;
+        }
+
+        .cmd-block code {
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .cmd-block .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #cbd5e1;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .cmd-block .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.16);
+            color: #fff;
+        }
+
+        .cmd-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 18px;
+            margin-bottom: 0;
+        }
+
+        .cmd-label:first-child {
+            margin-top: 0;
+        }
+
+        textarea.paste-box {
+            width: 100%;
+            min-height: 140px;
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-recessed);
+            color: var(--text-main);
+            resize: vertical;
+        }
+
+        .results {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .result-row {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+        }
+
+        .result-row .result-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .result-row .ticket-key {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 13px;
+        }
+
+        .result-row .ticket-summary {
+            font-size: 13px;
+            color: var(--text-main);
+            margin-left: 8px;
+        }
+
+        .sync-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .sync-badge.success {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid var(--success-border);
+        }
+
+        .sync-badge.warn {
+            background: var(--warning-bg);
+            color: var(--warning);
+            border: 1px solid var(--warning-border);
+        }
+
+        .point-detail {
+            margin-top: 8px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .empty-state {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .version-tag {
+            display: inline-block;
+            margin-left: 10px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--bg-recessed);
+            padding: 3px 8px;
+            border-radius: var(--radius-sm);
+        }
+
+        .card-warning {
+            background: var(--warning-bg);
+            border-color: var(--warning-border);
+        }
+
+        .card-warning .card-header {
+            border-bottom-color: var(--warning-border);
+        }
+
+        .card-warning h3 {
+            gap: 10px;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="page page-wide">
+        <a class="back-link" href="../index.html"><i class="fa-solid fa-arrow-left"></i> Front Automation Hub</a>
+
+        <div class="page-header">
+            <div class="page-icon"><i class="fa-solid fa-receipt"></i></div>
+            <div>
+                <h1>Sale Note Check</h1>
+                <p>เช็ค card "Sale Note" ที่ยังเปิดอยู่ใน Jira เทียบ docNo กับ MongoDB แล้วปิด card อัตโนมัติถ้า sync ครบแล้ว (COMPLETED) หรือติด flag + ย้ายไป In Progress ถ้ายังไม่ครบ (NEW)</p>
+            </div>
+        </div>
+
+        <div class="tab-switcher">
+            <button class="tab-btn active" data-tab="usage" id="btn-tab-usage">
+                <i class="fa-solid fa-play"></i> วิธีใช้งาน
+            </button>
+            <button class="tab-btn" data-tab="setup" id="btn-tab-setup">
+                <i class="fa-solid fa-screwdriver-wrench"></i> เตรียมเครื่อง & แก้ปัญหา
+            </button>
+        </div>
+
+        <section id="tab-usage" class="tab-pane active">
+            <div class="card">
+                <div class="card-header"><h3><span class="step-num">i</span> วิธีทำงาน</h3></div>
+                <div class="card-body">
+                    <p class="card-desc">
+                        หน้านี้เป็น static page ล้วน ไม่มี backend — จึงต่อ MongoDB และเรียก Jira API ตรงจากเบราว์เซอร์ไม่ได้
+                        (MongoDB ไม่รองรับการต่อจาก browser โดยตรง ต่อให้ทำได้ก็ไม่ควรฝัง connection string ไว้ในโค้ดที่ทุกคนเปิด view source เห็นได้
+                        และเรียก Jira ตรงจาก browser ก็ไม่ได้เพราะ CORS/credential) วิธีใช้จึงเป็น 3 ขั้นตอน: ดาวน์โหลด script → run บนเครื่องคุณเอง
+                        (ใช้ Jira token + Mongo connection string ที่มีอยู่แล้ว) → วางผลลัพธ์กลับมาดูเป็นตารางที่นี่<br><br>
+                        ตอน run จริง (ไม่ใส่ <code>--dry-run</code>) script จะหา card "Sale Note" ที่ยังเปิดอยู่ทั้งหมด ดึง docNo จาก card แล้วรัน
+                        aggregate เดิมที่ทีมใช้เช็คมืออยู่แล้วบน MongoDB (<code>store.sale_notes</code>) ถ้า status ของ sale note เป็น <code>COMPLETED</code>
+                        จะ assign card ให้ตัวเอง (เฉพาะถ้ายังไม่มี assignee เดิม) comment สรุป แล้วปิด (<strong>Close</strong>) พร้อมตั้ง Resolution/Fix Version
+                        ให้ตามที่ทีมปิดกันด้วยมืออยู่แล้ว (ถ้า card ยังเปิดอยู่ที่ Open จะย้ายผ่าน In Progress ก่อนแล้วปิดต่อในรอบเดียวกัน) ถ้า status ยังเป็น
+                        <code>NEW</code> จะย้าย card ไป <strong>In Progress</strong> (ถ้ายังไม่ถูกย้าย) แล้วติด flag <strong>Impediment</strong> ไว้ (เช็คซ้ำทุกรอบ
+                        ไม่ผูกกับจังหวะย้ายครั้งแรกเท่านั้น) และ script จะเช็คเวอร์ชันตัวเองกับ GitHub ให้ทุกครั้งที่ run — ถ้าเก่าไปจะเตือนให้โหลดใหม่ก่อน<br><br>
+                        <strong>ยังไม่เคยเตรียมเครื่อง หรือรันแล้วเจอ error?</strong> ไปที่แท็บ "เตรียมเครื่อง & แก้ปัญหา" ด้านบนก่อนได้เลย
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3><span class="step-num">1</span> ดาวน์โหลด & run script</h3></div>
+                <div class="card-body">
+                    <p class="card-desc">script จะหา card "Sale Note" ที่ยังไม่ปิดทั้งหมด รันเช็ค docNo บน MongoDB ให้ทุกใบ แล้ว comment + ย้าย/ปิด card อัตโนมัติตาม status</p>
+
+                    <a class="btn-primary" id="download-link" href="./mongo_jira_check.py" download="mongo_jira_check.py">
+                        <i class="fa-solid fa-download"></i> ดาวน์โหลด mongo_jira_check.py
+                    </a>
+                    <span class="version-tag" id="version-tag">v...</span>
+                    <p class="card-desc" style="margin-top: 8px; margin-bottom: 0;">ไฟล์ที่โหลดจะมีเลขเวอร์ชันต่อท้ายชื่อไฟล์ (เช่น <code>mongo_jira_check_v1.0.0.py</code>) เพื่อให้เห็นชัดว่าไฟล์ไหนใหม่สุด — เปลี่ยนชื่อไฟล์ยังไงก็รันได้เหมือนกัน ไม่กระทบการทำงาน แค่ต้องพิมพ์คำสั่งให้ตรงกับชื่อไฟล์จริงที่ดาวน์โหลดมา (ก็อปคำสั่งด้านล่างนี้ได้เลย จะตรงกับชื่อไฟล์ให้อัตโนมัติ)</p>
+
+                    <p class="cmd-label">เช็คดูก่อน ไม่แก้ card จริง (dry-run):</p>
+                    <div class="cmd-block">
+                        <code id="cmd-dry-run">python3 mongo_jira_check.py --dry-run</code>
+                        <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+
+                    <p class="cmd-label">run จริง (โพสต์ comment + ย้าย/ปิด card ขึ้น Jira ตาม status):</p>
+                    <div class="cmd-block">
+                        <code id="cmd-live-run">python3 mongo_jira_check.py</code>
+                        <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+
+                    <p class="cmd-label">ทุกครั้งที่ run script จะเช็คเวอร์ชันตัวเองกับเวอร์ชันล่าสุดบน GitHub ให้เอง — ถ้าเจอว่าเก่าจะเตือนและถามก่อนว่าจะรันต่อไหม ไม่ต้องมาเช็คเองว่าไฟล์เก่าหรือยัง</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3><span class="step-num">2</span> วางผลลัพธ์เพื่อดูเป็นตาราง (ไม่บังคับ)</h3></div>
+                <div class="card-body">
+                <p class="card-desc">คัดลอก output ทั้งหมดจาก terminal มาวางที่นี่ เพื่อดูสรุปแบบอ่านง่าย — ข้อมูลนี้ประมวลผลในเบราว์เซอร์ของคุณเท่านั้น ไม่ส่งไปที่ไหน</p>
+                <textarea id="paste-box" class="paste-box" placeholder="วาง output จาก terminal ที่นี่..."></textarea>
+                <button class="btn-primary" style="margin-top: 12px;" onclick="parseOutput()">
+                    <i class="fa-solid fa-table-list"></i> แสดงผลเป็นตาราง
+                </button>
+
+                <div id="results" class="results"></div>
+            </div>
+            </div>
+        </section>
+
+        <section id="tab-setup" class="tab-pane">
+            <div class="card">
+                <div class="card-header"><h3><i class="fa-solid fa-list-check"></i> Prerequisites</h3></div>
+                <div class="card-body">
+                    <p class="card-desc">ต้องมี 3 อย่างนี้ก่อน script จะรันได้ครับ:</p>
+                    <ul class="checklist">
+                        <li><i class="fa-solid fa-circle-check"></i> <span><strong>มี <code>pymongo</code></strong> — เปิด Terminal พิมพ์ <code>pip3 install pymongo</code> ครั้งเดียวจบ</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span><strong>มี Jira token ของตัวเอง</strong> — ถ้าคุณใช้ Claude Code + mcp-atlassian อยู่แล้ว หรือเคยตั้งไว้แล้วสำหรับ RSP Sync Check / Point Sum Check ข้ามข้อนี้ไปได้เลย (script ดึงให้อัตโนมัติ) ถ้ายังไม่มี ให้ทำตามการ์ด "ถ้า run แล้ว error: Jira credentials not found" ด้านล่างนี้ก่อน 1 รอบ</span></li>
+                        <li><i class="fa-solid fa-circle-check"></i> <span><strong>มี MongoDB connection string</strong> — ถ้าเคยตั้งไว้แล้วสำหรับ Point Sum Check ข้ามข้อนี้ไปได้เลย (ใช้ config เดียวกัน) ถ้ายังไม่มี ไปเอาจาก Confluence "Tooling Onboarding Checklist" (space TOOK) ดูการ์ด "ถ้า run แล้ว error: MongoDB connection string not found" ด้านล่างนี้</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card card-warning">
+                <div class="card-header"><h3><i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> ถ้า run แล้ว error "Jira credentials not found"</h3></div>
+                <div class="card-body">
+                    <p class="card-desc">ขึ้นครั้งแรกที่ run เพราะยังไม่เคยตั้ง Jira token ของตัวเองไว้บนเครื่องนี้ (ปกติสำหรับคนที่ไม่ได้ใช้ Claude Code) — ทำตามนี้ครั้งเดียวจบ:</p>
+                    <ol class="checklist" style="list-style: decimal; padding-left: 18px;">
+                        <li><span>เข้า <a href="https://jira.tdshop.io/" target="_blank" rel="noopener">jira.tdshop.io</a> → คลิก avatar มุมขวาบน → <strong>Profile</strong> → <strong>Personal Access Tokens</strong> → <strong>Create token</strong> → copy token ที่ได้ไว้ (โผล่ให้เห็นครั้งเดียว)</span></li>
+                        <li><span>เปิด Terminal แล้วรันคำสั่งนี้ (แทนที่ <code>PASTE_TOKEN_HERE</code> ด้วย token ที่ copy มา):</span></li>
+                    </ol>
+                    <div class="cmd-block">
+                        <code>cat &gt; ~/.mongo_jira_check.json &lt;&lt; 'EOF'
+{"jira_url": "https://jira.tdshop.io/", "jira_token": "PASTE_TOKEN_HERE"}
+EOF</code>
+                        <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+                    <p class="card-desc" style="margin-top: 12px; margin-bottom: 0;">แล้ว run <code id="cmd-dry-run-inline-1">python3 mongo_jira_check.py --dry-run</code> ใหม่อีกครั้ง (ชื่อไฟล์ให้ดูจากที่ดาวน์โหลดจริงในแท็บ "วิธีใช้งาน")</p>
+                </div>
+            </div>
+
+            <div class="card card-warning">
+                <div class="card-header"><h3><i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> ถ้า run แล้ว error "MongoDB connection string not found"</h3></div>
+                <div class="card-body">
+                    <p class="card-desc">ต้องเอา connection string แบบ read-only ของ PROD มาตั้งไว้บนเครื่องเองครั้งเดียว — ห้าม commit หรือแชร์ค่านี้ที่ไหนเด็ดขาด เพราะมี username/password ฝังอยู่ในเส้นเดียวกัน:</p>
+                    <ol class="checklist" style="list-style: decimal; padding-left: 18px;">
+                        <li><span>เปิด Confluence <strong>"Tooling Onboarding Checklist"</strong> (space TOOK) → หาหัวข้อ "Setup MongoDB Connection to PROD and NEST BETA" → copy connection string ช่อง <strong>PROD (Local)</strong> มาทั้งเส้น (มี host คั่นด้วย comma 3 ตัว)</span></li>
+                        <li><span>แทนที่ <code>{UserName}</code> ใน <code>appName=...</code> ด้วยชื่อตัวเอง</span></li>
+                        <li><span>เปิด Terminal แล้วรันคำสั่งนี้ (แทนที่ <code>YOUR_CONNECTION_STRING</code> ด้วยเส้นที่ copy มา):</span></li>
+                    </ol>
+                    <div class="cmd-block">
+                        <code>cat &gt; ~/.mongo_jira_check.json &lt;&lt; 'EOF'
+{"mongo_uri": "YOUR_CONNECTION_STRING"}
+EOF</code>
+                        <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+                    <p class="card-desc" style="margin-top: 12px; margin-bottom: 0;">ถ้าเคยตั้ง <code>jira_token</code> ไว้ในไฟล์นี้แล้วจากขั้นตอนก่อนหน้า ให้ใส่ทั้ง <code>jira_url</code>/<code>jira_token</code>/<code>mongo_uri</code> ลงใน JSON เดียวกัน (ไฟล์นี้แก้ทับได้ ไม่ต้องมีสองไฟล์แยกกัน) แล้ว run <code id="cmd-dry-run-inline-2">python3 mongo_jira_check.py --dry-run</code> ใหม่อีกครั้ง</p>
+                </div>
+            </div>
+
+            <div class="card card-warning">
+                <div class="card-header"><h3><i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> ถ้า run แล้ว error "CERTIFICATE_VERIFY_FAILED"</h3></div>
+                <div class="card-body">
+                    <p class="card-desc">เจอบ่อยบน Mac ที่ลง Python จาก python.org ตรง — ตัว Python ไม่มี CA certificate ติดมาให้ครบ ต้องรันตัวติดตั้งของ Python เองอีกครั้ง (ปลอดภัย ไม่กระทบอะไรอื่น):</p>
+                    <div class="cmd-block">
+                        <code>open "/Applications/Python 3.13/Install Certificates.command"</code>
+                        <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+                    <p class="card-desc" style="margin-top: 12px; margin-bottom: 0;">ถ้าเวอร์ชัน Python ไม่ใช่ 3.13 ให้แก้เลขในคำสั่งให้ตรงกับโฟลเดอร์จริงใน <code>/Applications/</code> — เช็คเวอร์ชันตัวเองด้วย <code>python3 --version</code></p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="toast" class="toast hidden">
+        <i class="fa-solid fa-info-circle toast-icon"></i>
+        <span class="toast-message">Message goes here</span>
+    </div>
+
+    <script>
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = toast.querySelector('.toast-message');
+            const toastIcon = toast.querySelector('.toast-icon');
+
+            toast.className = 'toast';
+            let iconClass = 'fa-info-circle';
+            if (type === 'success') {
+                toast.classList.add('toast-success');
+                iconClass = 'fa-circle-check';
+            } else if (type === 'error') {
+                toast.classList.add('toast-error');
+                iconClass = 'fa-circle-xmark';
+            }
+            toastIcon.className = `fa-solid ${iconClass} toast-icon`;
+            toastMsg.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+
+        async function copyCmd(btn, text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('Copied to clipboard', 'success');
+            } catch (err) {
+                showToast('Copy failed — select the text manually', 'error');
+            }
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Parses the plain-text stdout of mongo_jira_check.py, e.g.:
+        // [SUP-13552] SalesNote : SN26-TH004759-M02-0000073
+        //   docNo=SN26-TH004759-M02-0000073 saleNoteStatus=COMPLETED saleNoteNo=... storeCode=...
+        //   comment posted
+        //   status: In Progress -> Close, unflagged, resolution='Won't Do', fixVersion='Won't Fix Release'
+        // or a skip line: [SUP-13999] could not parse doc_no from description, skipping
+        function parseOutput() {
+            const raw = document.getElementById('paste-box').value;
+            const resultsEl = document.getElementById('results');
+            resultsEl.innerHTML = '';
+
+            if (!raw.trim()) {
+                showToast('วาง output ก่อนนะครับ', 'error');
+                return;
+            }
+
+            const headerRe = /^\[([A-Z][A-Z0-9_]+-\d+)\]\s*(.+)$/;
+            const statsRe = /^\s*docNo=(\S+)\s+saleNoteStatus=(\S+)\s+saleNoteNo=(\S+)\s+storeCode=(\S+)\s*$/;
+            const closedRe = /status:.*->\s*Close|would transition -> Close/;
+            const flaggedRe = /flagged as|would \(re\)flag/;
+
+            const lines = raw.split('\n');
+            const tickets = [];
+            let current = null;
+
+            for (const line of lines) {
+                const h = line.match(headerRe);
+                if (h) {
+                    current = {
+                        key: h[1],
+                        headline: h[2].trim(),
+                        skipped: /skipping$/.test(h[2].trim()),
+                        docNo: null, status: null, saleNoteNo: null, storeCode: null,
+                        closed: false, flagged: false,
+                    };
+                    tickets.push(current);
+                    continue;
+                }
+                if (!current) continue;
+                const s = line.match(statsRe);
+                if (s) {
+                    current.docNo = s[1];
+                    current.status = s[2];
+                    current.saleNoteNo = s[3];
+                    current.storeCode = s[4];
+                    continue;
+                }
+                if (closedRe.test(line)) current.closed = true;
+                if (flaggedRe.test(line)) current.flagged = true;
+            }
+
+            if (tickets.length === 0) {
+                resultsEl.innerHTML = '<div class="empty-state">ไม่เจอ ticket ในข้อความที่วาง — ตรวจว่าคัดลอก output มาครบไหม</div>';
+                return;
+            }
+
+            for (const t of tickets) {
+                const row = document.createElement('div');
+                row.className = 'result-row';
+
+                let badgeClass = 'warn';
+                let badgeText = 'skipped';
+                let detail = '';
+                if (t.skipped) {
+                    badgeText = 'skipped';
+                    detail = escapeHtml(t.headline);
+                } else if (t.status === 'COMPLETED') {
+                    badgeClass = 'success';
+                    badgeText = t.closed ? 'closed' : 'matched';
+                    detail = `docNo=${t.docNo} saleNoteNo=${t.saleNoteNo} storeCode=${t.storeCode}`;
+                } else if (t.status) {
+                    badgeClass = 'warn';
+                    badgeText = t.flagged ? 'flagged (in progress)' : t.status.toLowerCase();
+                    detail = `docNo=${t.docNo} saleNoteNo=${t.saleNoteNo} storeCode=${t.storeCode}`;
+                } else {
+                    detail = 'ไม่พบข้อมูล sale note ในผลลัพธ์นี้';
+                }
+
+                row.innerHTML = `
+                    <div class="result-head">
+                        <div><span class="ticket-key">${escapeHtml(t.key)}</span><span class="ticket-summary">${t.skipped ? '' : escapeHtml(t.headline)}</span></div>
+                        <span class="sync-badge ${badgeClass}">${escapeHtml(badgeText)}</span>
+                    </div>
+                    <div class="point-detail">${detail}</div>
+                `;
+                resultsEl.appendChild(row);
+            }
+
+            showToast(`Parsed ${tickets.length} ticket(s)`, 'success');
+        }
+
+        // { cache: 'no-store' } forces this one request past the browser's HTTP cache —
+        // without it, a cached VERSION response would always match a cached page's own
+        // (equally stale) meta tag below, and staleness would never be detected at all.
+        fetch('./VERSION', { cache: 'no-store' }).then(r => r.text()).then(v => {
+            const version = v.trim();
+            const filename = `mongo_jira_check_v${version}.py`;
+
+            document.getElementById('version-tag').textContent = `v${version}`;
+
+            const downloadLink = document.getElementById('download-link');
+            downloadLink.download = filename;
+
+            document.getElementById('cmd-dry-run').textContent = `python3 ${filename} --dry-run`;
+            document.getElementById('cmd-live-run').textContent = `python3 ${filename}`;
+            document.getElementById('cmd-dry-run-inline-1').textContent = `python3 ${filename} --dry-run`;
+            document.getElementById('cmd-dry-run-inline-2').textContent = `python3 ${filename} --dry-run`;
+
+            // This page's own HTML got cached by the browser with an old page-version meta
+            // tag baked in. Force one hard reload (cache-busted via a fresh query string) so
+            // the page catches up to the version it's already showing everywhere else above.
+            const pageVersion = document.querySelector('meta[name="page-version"]').content;
+            if (version !== pageVersion && !sessionStorage.getItem('sale_note_cache_bust_done')) {
+                sessionStorage.setItem('sale_note_cache_bust_done', '1');
+                location.replace(location.pathname + '?_v=' + version);
+            }
+        }).catch(() => {
+            document.getElementById('version-tag').remove();
+        });
+
+        function initTabs() {
+            const navItems = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const tabId = item.getAttribute('data-tab');
+
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+
+                    tabPanes.forEach(pane => {
+                        pane.classList.toggle('active', pane.id === `tab-${tabId}`);
+                    });
+                });
+            });
+        }
+
+        initTabs();
+    </script>
+
+    <script src="../shared/back-to-top.js"></script>
+</body>
+
+</html>
