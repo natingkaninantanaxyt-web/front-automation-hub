@@ -26,8 +26,23 @@
             font-size: 26px;
         }
 
-        .module-grid {
+        .module-section {
             margin-top: 40px;
+        }
+
+        .module-section + .module-section {
+            margin-top: 48px;
+        }
+
+        .section-title {
+            font-family: var(--font-heading);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-strong);
+            margin: 0 0 16px;
+        }
+
+        .module-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 20px;
@@ -129,38 +144,46 @@
             </div>
         </div>
 
-        <div class="module-grid">
-            <a class="module-card" href="./crossformat/">
-                <div class="module-icon"><i class="fa-solid fa-file-excel"></i></div>
-                <h2>CrossFormat</h2>
-                <p>แปลงไฟล์ Excel ทะเบียนร้านค้าเป็น .txt แบบ pipe-delimited พร้อมตรวจสอบโครงสร้างและ deploy ขึ้น SFTP</p>
-                <span class="module-open">เปิดใช้งาน <i class="fa-solid fa-arrow-right"></i></span>
-            </a>
+        <div class="module-section">
+            <h2 class="section-title">KBank Register MID</h2>
+            <div class="module-grid">
+                <a class="module-card" href="./crossformat/">
+                    <div class="module-icon"><i class="fa-solid fa-file-excel"></i></div>
+                    <h2>CrossFormat</h2>
+                    <p>แปลงไฟล์ Excel ทะเบียนร้านค้าเป็น .txt แบบ pipe-delimited พร้อมตรวจสอบโครงสร้างและ deploy ขึ้น SFTP</p>
+                    <span class="module-open">เปิดใช้งาน <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+            </div>
+        </div>
 
-            <a class="module-card" href="./rsp-sync-check/">
-                <div class="module-icon"><i class="fa-solid fa-store"></i></div>
-                <h2>RSP Sync Check</h2>
-                <p>เช็ค card Jira "RSP Sync" ที่ยังเปิดอยู่ ว่าร้านไหน sync ราคาแล้วบ้าง ร้านไหนยังไม่ครบ</p>
-                <span class="module-open">เปิดใช้งาน <i class="fa-solid fa-arrow-right"></i></span>
-            </a>
+        <div class="module-section">
+            <h2 class="section-title">Jira Pro-Active</h2>
+            <div class="module-grid">
+                <a class="module-card" href="./rsp-sync-check/">
+                    <div class="module-icon"><i class="fa-solid fa-store"></i></div>
+                    <h2>RSP Sync Check</h2>
+                    <p>เช็ค card Jira "RSP Sync" ที่ยังเปิดอยู่ ว่าร้านไหน sync ราคาแล้วบ้าง ร้านไหนยังไม่ครบ</p>
+                    <span class="module-open">เปิดใช้งาน <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
 
-            <a class="module-card" href="./mongo-jira-check-pointsum/">
-                <div class="module-icon"><i class="fa-solid fa-coins"></i></div>
-                <h2>Point Sum Check</h2>
-                <p>เช็ค card Jira "Point Sum" ที่ยังเปิดอยู่ เทียบ point summary กับ MongoDB แล้วปิด card อัตโนมัติถ้าข้อมูลตรงกัน</p>
-                <span class="module-open">เปิดใช้งาน <i class="fa-solid fa-arrow-right"></i></span>
-            </a>
+                <a class="module-card" href="./mongo-jira-check-pointsum/">
+                    <div class="module-icon"><i class="fa-solid fa-coins"></i></div>
+                    <h2>Point Sum Check</h2>
+                    <p>เช็ค card Jira "Point Sum" ที่ยังเปิดอยู่ เทียบ point summary กับ MongoDB แล้วปิด card อัตโนมัติถ้าข้อมูลตรงกัน</p>
+                    <span class="module-open">เปิดใช้งาน <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
 
-            <a class="module-card" href="./mongo-jira-check-salesnote/">
-                <div class="module-icon"><i class="fa-solid fa-receipt"></i></div>
-                <h2>Sale Note Check</h2>
-                <p>เช็ค card Jira "Sale Note" ที่ยังเปิดอยู่ เทียบ docNo กับ MongoDB แล้วปิด card ถ้า sync ครบ (COMPLETED) หรือติด flag ถ้ายังไม่ครบ (NEW)</p>
-                <span class="module-open">เปิดใช้งาน <i class="fa-solid fa-arrow-right"></i></span>
-            </a>
+                <a class="module-card" href="./mongo-jira-check-salesnote/">
+                    <div class="module-icon"><i class="fa-solid fa-receipt"></i></div>
+                    <h2>Sale Note Check</h2>
+                    <p>เช็ค card Jira "Sale Note" ที่ยังเปิดอยู่ เทียบ docNo กับ MongoDB แล้วปิด card ถ้า sync ครบ (COMPLETED) หรือติด flag ถ้ายังไม่ครบ (NEW)</p>
+                    <span class="module-open">เปิดใช้งาน <i class="fa-solid fa-arrow-right"></i></span>
+                </a>
 
-            <div class="module-placeholder">
-                <i class="fa-regular fa-square-plus"></i>
-                <span>automation อื่นของทีมจะเพิ่มเข้ามาที่นี่</span>
+                <div class="module-placeholder">
+                    <i class="fa-regular fa-square-plus"></i>
+                    <span>automation อื่นของทีมจะเพิ่มเข้ามาที่นี่</span>
+                </div>
             </div>
         </div>
 
