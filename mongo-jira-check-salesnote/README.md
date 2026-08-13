@@ -11,7 +11,7 @@ Open → In Progress → flag/Close ที่โมดูลนี้ใช้�
 
 ต่อ MongoDB ตรงจาก client-side JS ไม่ได้ (ไม่ใช่ HTTP, ต่อให้ทำได้ก็ไม่ควรฝัง connection string ไว้ในโค้ดที่ทุกคน
 เปิด view source เห็นได้) และเรียก Jira REST API ตรงจาก browser ก็ไม่ได้เหมือนกัน (CORS + ต้องมี credential) —
-งานจริงต้องรันจาก `mongo_jira_check.py` บนเครื่องผู้ใช้เท่านั้น
+งานจริงต้องรันจาก `mongo_jira_check_salesnote.py` บนเครื่องผู้ใช้เท่านั้น
 
 ## Setup
 
@@ -37,8 +37,8 @@ Open → In Progress → flag/Close ที่โมดูลนี้ใช้�
 ## Running
 
 ```
-python3 mongo_jira_check.py --dry-run   # ดูก่อนว่าจะทำอะไร ไม่แก้ตั๋วจริง
-python3 mongo_jira_check.py             # รันจริง
+python3 mongo_jira_check_salesnote.py --dry-run   # ดูก่อนว่าจะทำอะไร ไม่แก้ตั๋วจริง
+python3 mongo_jira_check_salesnote.py             # รันจริง
 ```
 
 เพิ่ม `--skip-update-check` ถ้าไม่อยากให้เช็คเวอร์ชันตอนเทส

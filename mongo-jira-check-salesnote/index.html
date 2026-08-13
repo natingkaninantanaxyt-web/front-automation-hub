@@ -293,21 +293,21 @@
                 <div class="card-body">
                     <p class="card-desc">script จะหา card "Sale Note" ที่ยังไม่ปิดทั้งหมด รันเช็ค docNo บน MongoDB ให้ทุกใบ แล้ว comment + ย้าย/ปิด card อัตโนมัติตาม status</p>
 
-                    <a class="btn-primary" id="download-link" href="./mongo_jira_check.py" download="mongo_jira_check.py">
-                        <i class="fa-solid fa-download"></i> ดาวน์โหลด mongo_jira_check.py
+                    <a class="btn-primary" id="download-link" href="./mongo_jira_check_salesnote.py" download="mongo_jira_check_salesnote.py">
+                        <i class="fa-solid fa-download"></i> ดาวน์โหลด mongo_jira_check_salesnote.py
                     </a>
                     <span class="version-tag" id="version-tag">v...</span>
-                    <p class="card-desc" style="margin-top: 8px; margin-bottom: 0;">ไฟล์ที่โหลดจะมีเลขเวอร์ชันต่อท้ายชื่อไฟล์ (เช่น <code>mongo_jira_check_v1.0.0.py</code>) เพื่อให้เห็นชัดว่าไฟล์ไหนใหม่สุด — เปลี่ยนชื่อไฟล์ยังไงก็รันได้เหมือนกัน ไม่กระทบการทำงาน แค่ต้องพิมพ์คำสั่งให้ตรงกับชื่อไฟล์จริงที่ดาวน์โหลดมา (ก็อปคำสั่งด้านล่างนี้ได้เลย จะตรงกับชื่อไฟล์ให้อัตโนมัติ)</p>
+                    <p class="card-desc" style="margin-top: 8px; margin-bottom: 0;">ไฟล์ที่โหลดจะมีเลขเวอร์ชันต่อท้ายชื่อไฟล์ (เช่น <code>mongo_jira_check_salesnote_v1.0.0.py</code>) เพื่อให้เห็นชัดว่าไฟล์ไหนใหม่สุด — เปลี่ยนชื่อไฟล์ยังไงก็รันได้เหมือนกัน ไม่กระทบการทำงาน แค่ต้องพิมพ์คำสั่งให้ตรงกับชื่อไฟล์จริงที่ดาวน์โหลดมา (ก็อปคำสั่งด้านล่างนี้ได้เลย จะตรงกับชื่อไฟล์ให้อัตโนมัติ)</p>
 
                     <p class="cmd-label">เช็คดูก่อน ไม่แก้ card จริง (dry-run):</p>
                     <div class="cmd-block">
-                        <code id="cmd-dry-run">python3 mongo_jira_check.py --dry-run</code>
+                        <code id="cmd-dry-run">python3 mongo_jira_check_salesnote.py --dry-run</code>
                         <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
                     </div>
 
                     <p class="cmd-label">run จริง (โพสต์ comment + ย้าย/ปิด card ขึ้น Jira ตาม status):</p>
                     <div class="cmd-block">
-                        <code id="cmd-live-run">python3 mongo_jira_check.py</code>
+                        <code id="cmd-live-run">python3 mongo_jira_check_salesnote.py</code>
                         <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
                     </div>
 
@@ -356,7 +356,7 @@
 EOF</code>
                         <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
                     </div>
-                    <p class="card-desc" style="margin-top: 12px; margin-bottom: 0;">แล้ว run <code id="cmd-dry-run-inline-1">python3 mongo_jira_check.py --dry-run</code> ใหม่อีกครั้ง (ชื่อไฟล์ให้ดูจากที่ดาวน์โหลดจริงในแท็บ "วิธีใช้งาน")</p>
+                    <p class="card-desc" style="margin-top: 12px; margin-bottom: 0;">แล้ว run <code id="cmd-dry-run-inline-1">python3 mongo_jira_check_salesnote.py --dry-run</code> ใหม่อีกครั้ง (ชื่อไฟล์ให้ดูจากที่ดาวน์โหลดจริงในแท็บ "วิธีใช้งาน")</p>
                 </div>
             </div>
 
@@ -375,7 +375,7 @@ EOF</code>
 EOF</code>
                         <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
                     </div>
-                    <p class="card-desc" style="margin-top: 12px; margin-bottom: 0;">ถ้าเคยตั้ง <code>jira_token</code> ไว้ในไฟล์นี้แล้วจากขั้นตอนก่อนหน้า ให้ใส่ทั้ง <code>jira_url</code>/<code>jira_token</code>/<code>mongo_uri</code> ลงใน JSON เดียวกัน (ไฟล์นี้แก้ทับได้ ไม่ต้องมีสองไฟล์แยกกัน) แล้ว run <code id="cmd-dry-run-inline-2">python3 mongo_jira_check.py --dry-run</code> ใหม่อีกครั้ง</p>
+                    <p class="card-desc" style="margin-top: 12px; margin-bottom: 0;">ถ้าเคยตั้ง <code>jira_token</code> ไว้ในไฟล์นี้แล้วจากขั้นตอนก่อนหน้า ให้ใส่ทั้ง <code>jira_url</code>/<code>jira_token</code>/<code>mongo_uri</code> ลงใน JSON เดียวกัน (ไฟล์นี้แก้ทับได้ ไม่ต้องมีสองไฟล์แยกกัน) แล้ว run <code id="cmd-dry-run-inline-2">python3 mongo_jira_check_salesnote.py --dry-run</code> ใหม่อีกครั้ง</p>
                 </div>
             </div>
 
@@ -437,7 +437,7 @@ EOF</code>
                 .replace(/'/g, "&#039;");
         }
 
-        // Parses the plain-text stdout of mongo_jira_check.py, e.g.:
+        // Parses the plain-text stdout of mongo_jira_check_salesnote.py, e.g.:
         // [SUP-13552] SalesNote : SN26-TH004759-M02-0000073
         //   docNo=SN26-TH004759-M02-0000073 saleNoteStatus=COMPLETED saleNoteNo=... storeCode=...
         //   comment posted
@@ -533,7 +533,7 @@ EOF</code>
         // (equally stale) meta tag below, and staleness would never be detected at all.
         fetch('./VERSION', { cache: 'no-store' }).then(r => r.text()).then(v => {
             const version = v.trim();
-            const filename = `mongo_jira_check_v${version}.py`;
+            const filename = `mongo_jira_check_salesnote_v${version}.py`;
 
             document.getElementById('version-tag').textContent = `v${version}`;
 
