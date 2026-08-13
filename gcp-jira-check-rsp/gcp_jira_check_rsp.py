@@ -37,7 +37,7 @@ import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-SCRIPT_VERSION = "1.2.3"
+SCRIPT_VERSION = "1.2.4"
 VERSION_URL = (
     "https://raw.githubusercontent.com/natingkaninantanaxyt-web/"
     "front-automation-hub/main/gcp-jira-check-rsp/VERSION"
@@ -164,7 +164,13 @@ def jira_request(base_url, token, path, method="GET", body=None):
         cmd = ["curl", "-sS", "-K", cfg_path, "-X", method, "-w", "\n%{http_code}", url]
         if body is not None:
             cmd += ["--data-binary", json.dumps(body)]
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        except subprocess.TimeoutExpired:
+            fail(
+                f"Timed out waiting for Jira ({method} {path}) after 30s.\n"
+                "  Check your network/VPN connection to jira.tdshop.io and try again."
+            )
         if proc.returncode != 0:
             raise RuntimeError(f"curl failed ({proc.returncode}): {proc.stderr.strip()}")
         body_text, _, status_code = proc.stdout.rpartition("\n")
