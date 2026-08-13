@@ -6,7 +6,7 @@
 ตรงกัน) ถ้า**ทุกร้าน**ใน ticket sync ครบแล้วปิดตั๋วอัตโนมัติ ถ้ายังมีร้านไหนไม่ sync ติด flag ไว้ให้รัน POS Repair
 ซ้ำ (ลิงก์ Jenkins มีอยู่ในตั๋วอยู่แล้ว) — เป็นหนึ่งโมดูลใน [Front Automation Hub](../README.md) คู่กับ
 [mongo-jira-check-pointsum](../mongo-jira-check-pointsum/) / [mongo-jira-check-salesnote](../mongo-jira-check-salesnote/)
-(ต่อ MongoDB เหมือนกันแต่คนละ collection) และ [rsp-sync-check](../rsp-sync-check/) (ที่มาของ pattern การย้ายตั๋ว
+(ต่อ MongoDB เหมือนกันแต่คนละ collection) และ [gcp-jira-check-rsp](../gcp-jira-check-rsp/) (ที่มาของ pattern การย้ายตั๋ว
 Open → In Progress → flag/Close ที่โมดูลนี้ใช้ต่อ)
 
 ## ทำไมต้องรันจากเครื่อง ไม่ใช่ในเบราว์เซอร์
@@ -18,7 +18,7 @@ Open → In Progress → flag/Close ที่โมดูลนี้ใช้�
 ## Setup
 
 1. `pip3 install pymongo`
-2. Jira credential — ใช้ config เดียวกับ `rsp_sync_check.py` / `mongo-jira-check-pointsum` / `mongo-jira-check-salesnote`
+2. Jira credential — ใช้ config เดียวกับ `gcp_jira_check_rsp.py` / `mongo-jira-check-pointsum` / `mongo-jira-check-salesnote`
    ได้เลยถ้าตั้งไว้แล้ว: env vars `JIRA_URL`/`JIRA_PERSONAL_TOKEN`, หรือ `~/.mongo_jira_check.json` /
    `~/.rsp_sync_check.json`
 3. MongoDB connection string — ใช้ config เดียวกับโมดูลอื่นได้เลยถ้าตั้งไว้แล้ว (field `mongo_uri` เดียวกัน ต่อได้ทั้ง
@@ -66,15 +66,15 @@ python3 mongo_jira_check_assortment.py             # รันจริง
 ด้วยถ้าติดอยู่จากรอบก่อน) ถ้า**มีร้านใดร้านหนึ่ง** ยัง `not_synced`/`store_not_found` → ย้ายไป **In Progress** (ถ้า
 ยังไม่ถูกย้าย) แล้วติด flag **`Impediment`** ไว้ (idempotent, เช็คซ้ำทุกรอบไม่ผูกกับจังหวะย้ายครั้งแรกเท่านั้น)
 
-ทั้งหมดนี้เป็น movement pattern เดียวกับ `rsp_sync_check.py` / `mongo-jira-check-salesnote` เป๊ะ (Open → In Progress
+ทั้งหมดนี้เป็น movement pattern เดียวกับ `gcp_jira_check_rsp.py` / `mongo-jira-check-salesnote` เป๊ะ (Open → In Progress
 ก่อนเสมอ, reconcile flag/Close จาก state ปัจจุบันทุกรอบ ไม่ใช่แค่ตอน transition edge) แค่เปลี่ยนตัวตัดสินใจเป็น "ทุก
 ร้านใน ticket sync assortment ครบหรือยัง" (MongoDB, เช็คทีละร้าน) แทน docNo เดี่ยว หรือ point summary เดี่ยว
 
 Transition ID ไม่ได้ hardcode ไว้ — `get_transition_id` เรียก `/issue/{key}/transitions` สดทุกครั้งแล้วหาด้วย
 **ชื่อ** transition ("In Progress" / "Close") ถ้าหาไม่เจอ (เช่น workflow ถูกแก้ไปแล้ว) จะ print WARNING แล้วข้าม
-ไม่ทำให้ script ทั้งรอบ crash — เหมือน `rsp_sync_check.py` เรื่อง flag (`set_flag`) ก็ใช้ endpoint เดียวกัน
+ไม่ทำให้ script ทั้งรอบ crash — เหมือน `gcp_jira_check_rsp.py` เรื่อง flag (`set_flag`) ก็ใช้ endpoint เดียวกัน
 (`POST /rest/greenhopper/1.0/xboard/issue/flag/flag.json`) เพราะเป็น board/customfield เดียวกัน
 
 ไม่มี Jira token หรือ Mongo connection string ฝังอยู่ในไฟล์นี้เลยไม่ว่ากรณีไหน ปลอดภัยที่จะ commit ขึ้น public repo
 เพราะ credential จริงอยู่แค่บนเครื่องผู้ใช้เท่านั้น เรียก Jira ผ่าน `curl` (ไม่ใช่ Python `urllib`) ด้วยเหตุผลเดียวกับ
-`rsp_sync_check.py` (certifi bundle ไม่มี CA ขององค์กร)
+`gcp_jira_check_rsp.py` (certifi bundle ไม่มี CA ขององค์กร)

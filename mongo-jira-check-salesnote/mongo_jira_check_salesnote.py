@@ -8,7 +8,7 @@ its status:
   - status = NEW        -> flag the ticket and make sure it's in "In
     Progress" (still needs the doc synced from POS/HH)
 (Companion to mongo-jira-check-pointsum — same idea, different collection —
-and to rsp-sync-check, whose Open -> In Progress -> flag/Close movement this
+and to gcp-jira-check-rsp, whose Open -> In Progress -> flag/Close movement this
 reuses exactly.)
 
 Runs on ANY teammate's machine. Each person needs their own:

@@ -4,7 +4,7 @@
 (เลข sale note เช่น `SN26-TH004759-M02-0000073`) จากตั๋วแล้วรัน aggregate เดิมที่ใช้เช็คมือ (`store.sale_notes`)
 ถ้า `status = COMPLETED` ปิดตั๋วอัตโนมัติ ถ้ายังเป็น `status = NEW` ติด flag ไว้แล้วย้ายไป **In Progress** —
 เป็นหนึ่งโมดูลใน [Front Automation Hub](../README.md) คู่กับ [mongo-jira-check-pointsum](../mongo-jira-check-pointsum/)
-(ต่อ MongoDB เหมือนกันแต่คนละ collection) และ [rsp-sync-check](../rsp-sync-check/) (ที่มาของ pattern การย้ายตั๋ว
+(ต่อ MongoDB เหมือนกันแต่คนละ collection) และ [gcp-jira-check-rsp](../gcp-jira-check-rsp/) (ที่มาของ pattern การย้ายตั๋ว
 Open → In Progress → flag/Close ที่โมดูลนี้ใช้ต่อ)
 
 ## ทำไมต้องรันจากเครื่อง ไม่ใช่ในเบราว์เซอร์
@@ -16,7 +16,7 @@ Open → In Progress → flag/Close ที่โมดูลนี้ใช้�
 ## Setup
 
 1. `pip3 install pymongo`
-2. Jira credential — ใช้ config เดียวกับ `rsp_sync_check.py` / `mongo-jira-check-pointsum` ได้เลยถ้าตั้งไว้แล้ว: env
+2. Jira credential — ใช้ config เดียวกับ `gcp_jira_check_rsp.py` / `mongo-jira-check-pointsum` ได้เลยถ้าตั้งไว้แล้ว: env
    vars `JIRA_URL`/`JIRA_PERSONAL_TOKEN`, หรือ `~/.mongo_jira_check.json` / `~/.rsp_sync_check.json`
 3. MongoDB connection string — ใช้ config เดียวกับ `mongo-jira-check-pointsum` ได้เลยถ้าตั้งไว้แล้ว (field `mongo_uri`
    เดียวกัน ต่อได้ทั้ง `membership` และ `store` DB ด้วย credential เดิม) ถ้ายังไม่มี ไปเอา connection string PROD
@@ -58,15 +58,15 @@ python3 mongo_jira_check_salesnote.py             # รันจริง
 - **status = NEW** → assign + post comment เหมือนกัน → ถ้าตั๋วยัง **Open** ย้ายไป **In Progress** → ติด flag
   **`Impediment`** ไว้ (idempotent, เช็คซ้ำทุกรอบไม่ผูกกับจังหวะย้ายครั้งแรกเท่านั้น — เผื่อรอบก่อนติด flag ไม่สำเร็จ)
 
-ทั้งหมดนี้เป็น movement pattern เดียวกับ `rsp_sync_check.py` เป๊ะ (Open → In Progress ก่อนเสมอ, reconcile flag/Close
+ทั้งหมดนี้เป็น movement pattern เดียวกับ `gcp_jira_check_rsp.py` เป๊ะ (Open → In Progress ก่อนเสมอ, reconcile flag/Close
 จาก state ปัจจุบันทุกรอบ ไม่ใช่แค่ตอน transition edge) แค่เปลี่ยนตัวตัดสินใจจาก "ร้านไหน sync ราคาแล้วบ้าง" (GCP log)
 เป็น "sale note นี้ status อะไร" (MongoDB) เท่านั้น
 
 Transition ID ไม่ได้ hardcode ไว้ — `get_transition_id` เรียก `/issue/{key}/transitions` สดทุกครั้งแล้วหาด้วย
 **ชื่อ** transition ("In Progress" / "Close") ถ้าหาไม่เจอ (เช่น workflow ถูกแก้ไปแล้ว) จะ print WARNING แล้วข้าม
-ไม่ทำให้ script ทั้งรอบ crash — เหมือน `rsp_sync_check.py` เรื่อง flag (`set_flag`) ก็ใช้ endpoint เดียวกัน
+ไม่ทำให้ script ทั้งรอบ crash — เหมือน `gcp_jira_check_rsp.py` เรื่อง flag (`set_flag`) ก็ใช้ endpoint เดียวกัน
 (`POST /rest/greenhopper/1.0/xboard/issue/flag/flag.json`) เพราะเป็น board/customfield เดียวกัน
 
 ไม่มี Jira token หรือ Mongo connection string ฝังอยู่ในไฟล์นี้เลยไม่ว่ากรณีไหน ปลอดภัยที่จะ commit ขึ้น public repo
 เพราะ credential จริงอยู่แค่บนเครื่องผู้ใช้เท่านั้น เรียก Jira ผ่าน `curl` (ไม่ใช่ Python `urllib`) ด้วยเหตุผลเดียวกับ
-`rsp_sync_check.py` (certifi bundle ไม่มี CA ขององค์กร)
+`gcp_jira_check_rsp.py` (certifi bundle ไม่มี CA ขององค์กร)

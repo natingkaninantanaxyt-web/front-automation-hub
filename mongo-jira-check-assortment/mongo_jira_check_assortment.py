@@ -7,7 +7,7 @@ store code on the ticket (store code -> store no in `store.stores`, then
 look up `store.pos_assortments` by storeNo+barcode) and moves the ticket
 according to whether ALL of its stores are now synced.
 (Companion to mongo-jira-check-salesnote / mongo-jira-check-pointsum — same
-idea, different collection — and to rsp-sync-check, whose Open -> In
+idea, different collection — and to gcp-jira-check-rsp, whose Open -> In
 Progress -> flag/Close movement this reuses exactly.)
 
 Runs on ANY teammate's machine. Each person needs their own:

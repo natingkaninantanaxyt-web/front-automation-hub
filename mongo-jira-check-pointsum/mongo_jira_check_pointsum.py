@@ -2,7 +2,7 @@
 """Daily check: open Jira "Point Sum" reconcile tickets (project SUP, label
 PS_Front) — re-run the member's point-sum-vs-transaction aggregate against
 MongoDB, and if the numbers now match, close the ticket automatically.
-(Companion to rsp_sync_check.py — same idea, different data source: Mongo
+(Companion to gcp_jira_check_rsp.py — same idea, different data source: Mongo
 instead of GCP Cloud Logging.)
 
 Runs on ANY teammate's machine. Each person needs their own:

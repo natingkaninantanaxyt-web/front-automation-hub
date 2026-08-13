@@ -3,7 +3,7 @@
 เช็คตั๋ว Jira "Point Sum : `<memberId>`-`<date>`" (project `SUP`, label `PS_Front`) ที่ยังไม่ปิด — รัน aggregate
 เดิมที่ใช้เช็คมือ (`membership.points`: point ของ 10 record ล่าสุดที่ไม่ EXPIRED เทียบกับ totalPoint ของ ACTIVE)
 ถ้าตรงกันแล้ว (`isEqual = true`) ปิดตั๋วอัตโนมัติ — เป็นหนึ่งโมดูลใน [Front Automation Hub](../README.md)
-คู่กับ [rsp-sync-check](../rsp-sync-check/) (สคริปต์เดี่ยว รันจากเครื่อง ไม่มี server เหมือนกัน แต่ต่อ MongoDB
+คู่กับ [gcp-jira-check-rsp](../gcp-jira-check-rsp/) (สคริปต์เดี่ยว รันจากเครื่อง ไม่มี server เหมือนกัน แต่ต่อ MongoDB
 แทน GCP Cloud Logging)
 
 ## ทำไมต้องรันจากเครื่อง ไม่ใช่ในเบราว์เซอร์
@@ -15,7 +15,7 @@
 ## Setup
 
 1. `pip3 install pymongo`
-2. Jira credential — เหมือนกับ `rsp_sync_check.py` เป๊ะ (ใช้ config เดียวกันได้ถ้าตั้งไว้แล้ว): env vars
+2. Jira credential — เหมือนกับ `gcp_jira_check_rsp.py` เป๊ะ (ใช้ config เดียวกันได้ถ้าตั้งไว้แล้ว): env vars
    `JIRA_URL`/`JIRA_PERSONAL_TOKEN`, หรือ `~/.mongo_jira_check.json` / `~/.rsp_sync_check.json`
 3. MongoDB connection string — ไปเอา connection string PROD (Local) แบบ read-only (`support_read_only`) จาก
    Confluence: **"Tooling Onboarding Checklist"** (space TOOK) → "Setup MongoDB Connection to PROD and NEST
@@ -50,13 +50,13 @@ python3 mongo_jira_check_pointsum.py             # รันจริง
 `fixVersions = ["Won't Fix Release"]` (ตรงกับที่ทีมปิดตั๋วพวกนี้ด้วยมืออยู่แล้ว เช่น SUP-13422) ถ้า `isEqual = false`
 ปล่อยตั๋วไว้เฉยๆ ไม่ทำอะไร (ตามคำแนะนำใน Confluence runbook — diff ระหว่างวันมักหายไปเองพอ BigQuery sync ตอนกลางคืน)
 
-ต่างจาก `rsp_sync_check.py` ตรงที่ workflow ของตั๋วประเภทนี้ไม่มีขั้น "In Progress"/flag ระหว่างทาง — จากตั๋วเก่าที่
+ต่างจาก `gcp_jira_check_rsp.py` ตรงที่ workflow ของตั๋วประเภทนี้ไม่มีขั้น "In Progress"/flag ระหว่างทาง — จากตั๋วเก่าที่
 ปิดไปแล้ว (SUP-13422 ฯลฯ) status เดินจาก **Open ตรงไป Close** เลยในตาที่ข้อมูล sync ตรงกันแล้ว
 
 Transition ID ไม่ได้ hardcode ไว้ — `get_transition_id` เรียก `/issue/{key}/transitions` สดทุกครั้งแล้วหาด้วย
 **ชื่อ** transition ("Close") ถ้าหาไม่เจอ (เช่น workflow ถูกแก้ไปแล้ว) จะ print WARNING แล้วข้าม ไม่ทำให้ script
-ทั้งรอบ crash — เหมือน `rsp_sync_check.py`
+ทั้งรอบ crash — เหมือน `gcp_jira_check_rsp.py`
 
 ไม่มี Jira token หรือ Mongo connection string ฝังอยู่ในไฟล์นี้เลยไม่ว่ากรณีไหน ปลอดภัยที่จะ commit ขึ้น public repo
 เพราะ credential จริงอยู่แค่บนเครื่องผู้ใช้เท่านั้น เรียก Jira ผ่าน `curl` (ไม่ใช่ Python `urllib`) ด้วยเหตุผลเดียวกับ
-`rsp_sync_check.py` (certifi bundle ไม่มี CA ขององค์กร)
+`gcp_jira_check_rsp.py` (certifi bundle ไม่มี CA ขององค์กร)

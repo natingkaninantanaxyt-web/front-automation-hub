@@ -1,4 +1,4 @@
-# RSP Sync Check
+# gcp-jira-check-rsp
 
 เช็คตั๋ว Jira "RSP Sync : Effective on ..." ที่ยังไม่ปิด ว่าร้านค้าไหน sync ราคาแล้วบ้าง เทียบกับ log
 `FetchRetailPrice` บน GCP (`tdshop-prod` / `PosApp`) แล้ว comment สรุปกลับที่ตั๋ว — เป็นหนึ่งโมดูลใน
@@ -13,11 +13,11 @@
 และเรียก Jira REST API ด้วย personal token) ต้องรันจากเครื่องผู้ใช้เท่านั้น — browser ยิง request ตรงไปที่
 `jira.tdshop.io` ไม่ได้ (CORS + ต้องมี credential) และไม่มีทางรัน `gcloud` จาก JS ในเบราว์เซอร์ หน้านี้จึงทำหน้าที่แค่:
 
-1. ให้ดาวน์โหลด [`rsp_sync_check.py`](./rsp_sync_check.py) — สคริปต์ตัวจริงที่รันการเช็ค
+1. ให้ดาวน์โหลด [`gcp_jira_check_rsp.py`](./gcp_jira_check_rsp.py) — สคริปต์ตัวจริงที่รันการเช็ค
 2. โชว์คำสั่ง terminal สำหรับรัน (`--dry-run` หรือรันจริง)
 3. รับ output ที่ผู้ใช้ copy-paste กลับมา แล้ว parse+render เป็นตารางอ่านง่าย (`parseOutput()` ใน `index.html`) — ประมวลผลในเบราว์เซอร์ล้วน ไม่ส่งข้อมูลไปที่ไหน
 
-## `rsp_sync_check.py`
+## `gcp_jira_check_rsp.py`
 
 สคริปต์ python เดี่ยว ไม่มี dependency นอก stdlib ทำงาน stage หลักๆ: `search_open_rsp_tickets` (JQL: ticket
 label `PS_Front` + summary มีคำว่า "RSP Sync" + ยังไม่ปิด) → `parse_ticket` (ดึง barcode/store list/effective
@@ -77,7 +77,7 @@ response body — ครอบคลุม error ทุกแบบ ไม่ใ
 
 ## Versioning / staleness check
 
-`SCRIPT_VERSION` ใน `rsp_sync_check.py` ต้อง**ตรงกับไฟล์ [`VERSION`](./VERSION)** เสมอ — ทุกครั้งที่แก้ logic ในสคริปต์
+`SCRIPT_VERSION` ใน `gcp_jira_check_rsp.py` ต้อง**ตรงกับไฟล์ [`VERSION`](./VERSION)** เสมอ — ทุกครั้งที่แก้ logic ในสคริปต์
 ต้อง bump ทั้งสองที่คู่กัน (`VERSION` เก็บแค่เลขเวอร์ชันดิบๆ ไม่มี newline พิเศษอะไร) เพราะตัวสคริปต์จะ fetch ไฟล์
 `VERSION` จาก `raw.githubusercontent.com` ทุกครั้งที่ run (`check_for_updates`) มาเทียบกับ `SCRIPT_VERSION` ของตัวเอง
 ถ้าไม่ตรงจะเตือนผู้ใช้ว่าไฟล์ที่โหลดไว้เก่าแล้ว ให้ไปโหลดใหม่ก่อน (ถาม y/N ว่าจะรันต่อทั้งที่เก่าไหม) — ถ้าลืม bump
@@ -98,8 +98,9 @@ fetch ทับของเก่า (กัน loop ด้วย `sessionStorag
 
 ## Running / developing
 
-- เปิด `rsp-sync-check/index.html` ตรงในเบราว์เซอร์ ไม่ต้อง install อะไร
-- ทดสอบ `rsp_sync_check.py` แยกจากหน้าเว็บได้เลย: `python3 rsp_sync_check.py --dry-run` (ต้อง `gcloud auth login`
+- เปิด `gcp-jira-check-rsp/index.html` ตรงในเบราว์เซอร์ ไม่ต้อง install อะไร
+- ทดสอบ `gcp_jira_check_rsp.py` แยกจากหน้าเว็บได้เลย: `python3 gcp_jira_check_rsp.py --dry-run` (ต้อง `gcloud auth login`
   และมี credential ตามที่ระบุไว้ข้างบนก่อน) เพิ่ม `--skip-update-check` ถ้าไม่อยากให้เช็คเวอร์ชันตอนเทส
-- ถ้าแก้ logic ใน `rsp_sync_check.py` ต้อง sync ให้ตรงกับตัวต้นฉบับที่ `~/scripts/rsp_sync_check/rsp_sync_check.py`
-  บนเครื่อง (ใช้รันแบบ manual/cron ได้เหมือนกัน) — สองไฟล์นี้เป็นคนละไฟล์ ไม่ได้ symlink กัน
+- ถ้าแก้ logic ใน `gcp_jira_check_rsp.py` ต้อง sync ให้ตรงกับตัวต้นฉบับที่ `~/scripts/rsp_sync_check/rsp_sync_check.py`
+  บนเครื่อง (ใช้รันแบบ manual/cron ได้เหมือนกัน — ชื่อไฟล์ path นี้ยังไม่ได้เปลี่ยนตาม เพราะเป็นไฟล์จริงนอก repo, ดู
+  หมายเหตุท้าย PR) — สองไฟล์นี้เป็นคนละไฟล์ ไม่ได้ symlink กัน

@@ -40,7 +40,7 @@ from pathlib import Path
 SCRIPT_VERSION = "1.2.3"
 VERSION_URL = (
     "https://raw.githubusercontent.com/natingkaninantanaxyt-web/"
-    "front-automation-hub/main/rsp-sync-check/VERSION"
+    "front-automation-hub/main/gcp-jira-check-rsp/VERSION"
 )
 
 GCP_PROJECT = "tdshop-prod"
