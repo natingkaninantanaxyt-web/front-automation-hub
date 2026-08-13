@@ -4,8 +4,17 @@ label PS_Front) — a ticket lists one barcode + one or more store codes that
 already had a POS Assortment repair job submitted (Jenkins link in the
 description). This script re-runs the team's manual MongoDB check for every
 store code on the ticket (store code -> store no in `store.stores`, then
-look up `store.pos_assortments` by storeNo+barcode) and moves the ticket
+look up `store.pos_assortments` by storeNo+barcode), also looks up
+`order.hold_orders` for a currently-active hold on that store code (so a
+missing sync that's actually explained by a legitimate hold shows up in the
+comment instead of looking like a bare POS failure), and moves the ticket
 according to whether ALL of its stores are now synced.
+
+NOTE: the ticket description comes back from Jira as real wiki markup
+(`||`/`{noformat}`/`[text|url]`), NOT the GitHub-flavored markdown a
+Jira-reading assistant might show you — build/test parsing regexes against
+the raw `fields.description` string from the REST API, not a rendered
+preview.
 (Companion to mongo-jira-check-salesnote / mongo-jira-check-pointsum — same
 idea, different collection — and to gcp-jira-check-rsp, whose Open -> In
 Progress -> flag/Close movement this reuses exactly.)
@@ -53,7 +62,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "1.1.0"
 VERSION_URL = (
     "https://raw.githubusercontent.com/natingkaninantanaxyt-web/"
     "front-automation-hub/main/mongo-jira-check-assortment/VERSION"
@@ -71,6 +80,9 @@ DB_NAME = "store"
 STORES_COLLECTION = "stores"
 ASSORTMENT_COLLECTION = "pos_assortments"
 
+ORDER_DB_NAME = "order"
+HOLD_ORDERS_COLLECTION = "hold_orders"
+
 STATUS_SYNCED = "synced"
 STATUS_NOT_SYNCED = "not_synced"
 STATUS_STORE_NOT_FOUND = "store_not_found"
@@ -84,8 +96,11 @@ TRANSITION_CLOSE = "Close"
 DRY_RUN = "--dry-run" in sys.argv
 SKIP_UPDATE_CHECK = "--skip-update-check" in sys.argv
 
-BARCODE_RE = re.compile(r"\|\s*Barcode\s*\|\s*([^\|\n]+?)\s*\|")
-STORE_CODES_RE = re.compile(r"\|\s*Store Codes\s*\|(.*?)\|\s*\n\|---\|---\|", re.DOTALL)
+# The description is genuine Jira wiki markup — every cell is delimited by
+# `||`, code blocks use {noformat} (not ``` ), and there's no separator row
+# between table rows (unlike the GFM tables a Jira-reading assistant shows).
+BARCODE_RE = re.compile(r"\|\|\s*Barcode\s*\|\s*([^\|\n]+?)\s*\|")
+STORE_CODES_RE = re.compile(r"\|\|\s*Store Codes\s*\|(.*?)\|\s*\n", re.DOTALL)
 
 
 def fail(message):
@@ -265,7 +280,7 @@ def search_open_assortment_tickets(base_url, token):
 
 
 def parse_store_codes(raw):
-    text = raw.replace("```", "")
+    text = raw.replace("{noformat}", "")
     parts = re.split(r"[\s,]+", text.strip())
     return [p for p in parts if p]
 
@@ -307,33 +322,50 @@ def query_assortment(assortment_col, store_no, barcode):
     )
 
 
-def check_store(stores_col, assortment_col, store_code, barcode):
+def query_hold_reason(hold_orders_col, store_code, now):
+    # No dependency on store `no` here — hold_orders is keyed by storeCode
+    # directly, so this works even for a store code that isn't in `stores`.
+    doc = hold_orders_col.find_one(
+        {"storeCode": store_code, "dateFrom": {"$lte": now}, "dateTo": {"$gte": now}},
+        {"_id": 0, "reason": 1},
+        sort=[("_id", -1)],
+    )
+    # "-" means no active hold covers today — a missing sync for this store is
+    # a genuine POS/repair issue, not explained by a legitimate hold.
+    return doc.get("reason") if doc and doc.get("reason") else "-"
+
+
+def check_store(stores_col, assortment_col, hold_orders_col, store_code, barcode, now):
+    # holdReason is only meaningful as an explanation for a store that hasn't
+    # synced — a store that's already synced (or that we couldn't even find)
+    # always gets "-" here, regardless of whether a hold happens to be active.
     store_no = query_store_no(stores_col, store_code)
     if store_no is None:
         return {
             "storeCode": store_code, "storeNo": None, "status": STATUS_STORE_NOT_FOUND,
-            "articleNo": None,
+            "articleNo": None, "holdReason": "-",
             "solution": f"Can not find {store_code} pls check storeCode input",
         }
 
     doc = query_assortment(assortment_col, store_no, barcode)
     if doc is None:
+        hold_reason = query_hold_reason(hold_orders_col, store_code, now)
         return {
             "storeCode": store_code, "storeNo": store_no, "status": STATUS_NOT_SYNCED,
-            "articleNo": None,
+            "articleNo": None, "holdReason": hold_reason,
             "solution": "pls export DB to re-check on Assortment table. If not found Run POS-Assortment on Jenkins",
         }
 
     return {
         "storeCode": store_code, "storeNo": store_no, "status": STATUS_SYNCED,
-        "articleNo": doc.get("articleNo"),
+        "articleNo": doc.get("articleNo"), "holdReason": "-",
         "solution": "-",
     }
 
 
-def check_ticket(stores_col, assortment_col, ticket):
+def check_ticket(stores_col, assortment_col, hold_orders_col, ticket, now):
     return [
-        check_store(stores_col, assortment_col, store_code, ticket["barcode"])
+        check_store(stores_col, assortment_col, hold_orders_col, store_code, ticket["barcode"], now)
         for store_code in ticket["store_codes"]
     ]
 
@@ -359,12 +391,12 @@ def format_comment(ticket, results):
     lines = [
         f"*{MARKER}* ({now})",
         f"barcode: {ticket['barcode']}",
-        "|| storeCode | storeNo | status | articleNo | solution ||",
+        "|| storeCode | storeNo | status | articleNo | holdReason | solution ||",
     ]
     for r in results:
         lines.append(
             f"| {r['storeCode']} | {r['storeNo'] or '-'} | {r['status']} | "
-            f"{r['articleNo'] or '-'} | {r['solution']} |"
+            f"{r['articleNo'] or '-'} | {r['holdReason']} | {r['solution']} |"
         )
     if all(r["status"] == STATUS_SYNCED for r in results):
         lines.append("ทุกร้านค้า sync assortment แล้วครับ ปิด ticket อัตโนมัติ")
@@ -394,11 +426,14 @@ def main():
         fail(f"Could not connect to MongoDB: {e}")
     stores_col = mongo_client[DB_NAME][STORES_COLLECTION]
     assortment_col = mongo_client[DB_NAME][ASSORTMENT_COLLECTION]
+    hold_orders_col = mongo_client[ORDER_DB_NAME][HOLD_ORDERS_COLLECTION]
 
     issues = search_open_assortment_tickets(base_url, token)
     if not issues:
         print("No open POS Assortment tickets found.")
         return
+
+    now = datetime.now(timezone.utc)
 
     for issue in issues:
         ticket = parse_ticket(issue)
@@ -406,7 +441,7 @@ def main():
             print(f"[{issue['key']}] could not parse barcode/store codes from description, skipping")
             continue
 
-        results = check_ticket(stores_col, assortment_col, ticket)
+        results = check_ticket(stores_col, assortment_col, hold_orders_col, ticket, now)
         needs_work = any(r["status"] != STATUS_SYNCED for r in results)
         current_status = issue["fields"]["status"]["name"]
         current_assignee = issue["fields"].get("assignee")
@@ -415,7 +450,7 @@ def main():
         synced = sum(1 for r in results if r["status"] == STATUS_SYNCED)
         print(f"  barcode={ticket['barcode']} stores={len(results)} synced={synced} needsWork={needs_work}")
         for r in results:
-            print(f"    storeCode={r['storeCode']} storeNo={r['storeNo']} status={r['status']}")
+            print(f"    storeCode={r['storeCode']} storeNo={r['storeNo']} status={r['status']} holdReason={r['holdReason']}")
 
         comment = format_comment(ticket, results)
         signature = result_signature(results)

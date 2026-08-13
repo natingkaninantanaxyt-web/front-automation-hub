@@ -11,7 +11,7 @@
          script below compares it against the live VERSION file to auto-recover from a stale
          cached copy of THIS page (the meta tags above are a weak hint at best; browsers mostly
          ignore http-equiv Cache-Control for normal navigation, so this is the real fix). -->
-    <meta name="page-version" content="1.0.0">
+    <meta name="page-version" content="1.1.0">
     <title>PA · POS Assortment Check</title>
     <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Inter,Arial,sans-serif' font-weight='700' font-size='24' fill='white' letter-spacing='-1'%3EPA%3C/text%3E%3C/svg%3E">
@@ -308,7 +308,9 @@
                         (ใช้ Jira token + Mongo connection string ที่มีอยู่แล้ว) → วางผลลัพธ์กลับมาดูเป็นตารางที่นี่<br><br>
                         ตอน run จริง (ไม่ใส่ <code>--dry-run</code>) script จะหา card "POS Assortment" ที่ยังเปิดอยู่ทั้งหมด ดึง Barcode + Store Codes
                         (ตั๋วเดียวมีได้หลายร้าน) จาก card แล้วรัน check เดิมที่ทีมใช้เช็คมือทีละร้านบน MongoDB (<code>store.stores</code> หา storeNo จาก
-                        storeCode → <code>store.pos_assortments</code> หา record ที่ storeNo+barcode ตรงกัน) ถ้า<strong>ทุกร้าน</strong>ใน ticket sync ครบแล้ว
+                        storeCode → <code>store.pos_assortments</code> หา record ที่ storeNo+barcode ตรงกัน) พร้อมเช็ค <code>order.hold_orders</code>
+                        ว่าร้านนั้นมี hold order ที่ครอบคลุมวันนี้อยู่มั้ย (ถ้ามีจะเอา reason เช่น <code>LATE_PAYMENT</code> มาโชว์ใน comment ด้วย ถ้าไม่มีจะใส่ <code>-</code>
+                        หมายความว่าร้านไม่ได้ถูก hold แต่เครื่อง POS ยังไม่ sync ข้อมูลมาจริงๆ) ถ้า<strong>ทุกร้าน</strong>ใน ticket sync ครบแล้ว
                         จะ assign card ให้ตัวเอง (เฉพาะถ้ายังไม่มี assignee เดิม) comment สรุปเป็นตาราง แล้วปิด (<strong>Close</strong>) พร้อมตั้ง
                         Resolution/Fix Version ให้ตามที่ทีมปิดกันด้วยมืออยู่แล้ว (ถ้า card ยังเปิดอยู่ที่ Open จะย้ายผ่าน In Progress ก่อนแล้วปิดต่อในรอบเดียวกัน)
                         ถ้า<strong>มีร้านใดร้านหนึ่ง</strong>ยังไม่ sync จะย้าย card ไป <strong>In Progress</strong> (ถ้ายังไม่ถูกย้าย) แล้วติด flag
@@ -471,7 +473,7 @@ EOF</code>
         // Parses the plain-text stdout of mongo_jira_check_assortment.py, e.g.:
         // [SUP-13596] POS Assortment : 4987072037614 | TH000228-TH000228 (2026-08-12)  (status=Open)
         //   barcode=4987072037614 stores=1 synced=1 needsWork=False
-        //     storeCode=TH000228 storeNo=228 status=synced
+        //     storeCode=TH000228 storeNo=228 status=synced holdReason=-
         //   comment posted
         //   status: In Progress -> Close, unflagged, resolution='Won't Do', fixVersion='Won't Fix Release'
         // or a skip line: [SUP-13999] could not parse barcode/store codes from description, skipping
@@ -487,7 +489,7 @@ EOF</code>
 
             const headerRe = /^\[([A-Z][A-Z0-9_]+-\d+)\]\s*(.+)$/;
             const statsRe = /^\s*barcode=(\S+)\s+stores=(\d+)\s+synced=(\d+)\s+needsWork=(True|False)\s*$/;
-            const storeRe = /^\s{4}storeCode=(\S+)\s+storeNo=(\S+)\s+status=(\S+)\s*$/;
+            const storeRe = /^\s{4}storeCode=(\S+)\s+storeNo=(\S+)\s+status=(\S+)\s+holdReason=(\S+)\s*$/;
             const closedRe = /status:.*->\s*Close|would transition -> Close/;
             const flaggedRe = /flagged as|would \(re\)flag/;
 
@@ -504,6 +506,8 @@ EOF</code>
                         skipped: /skipping$/.test(h[2].trim()),
                         barcode: null, stores: null, synced: null, needsWork: null,
                         storeRows: [],
+                        // holdReason "-" means no active hold covers today: a missing sync is
+                        // a genuine POS/repair issue, not explained by a legitimate hold
                         closed: false, flagged: false,
                     };
                     tickets.push(current);
@@ -520,7 +524,7 @@ EOF</code>
                 }
                 const st = line.match(storeRe);
                 if (st) {
-                    current.storeRows.push({ storeCode: st[1], storeNo: st[2], status: st[3] });
+                    current.storeRows.push({ storeCode: st[1], storeNo: st[2], status: st[3], holdReason: st[4] });
                     continue;
                 }
                 if (closedRe.test(line)) current.closed = true;
@@ -558,9 +562,10 @@ EOF</code>
                 if (t.storeRows.length) {
                     const rows = t.storeRows.map(r => {
                         const ok = r.status === 'synced';
+                        const holdText = r.holdReason && r.holdReason !== '-' ? ` · hold: ${escapeHtml(r.holdReason)}` : '';
                         return `<div class="store-row ${ok ? 'store-synced' : 'store-pending'}">
                             <i class="fa-solid ${ok ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
-                            <span>${escapeHtml(r.storeCode)} (storeNo=${escapeHtml(r.storeNo)}) — ${escapeHtml(r.status)}</span>
+                            <span>${escapeHtml(r.storeCode)} (storeNo=${escapeHtml(r.storeNo)}) — ${escapeHtml(r.status)}${holdText}</span>
                         </div>`;
                     }).join('');
                     storeListHtml = `<div class="store-list">${rows}</div>`;
