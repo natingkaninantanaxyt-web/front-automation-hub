@@ -14,7 +14,8 @@
 
 ## Setup
 
-1. `pip3 install pymongo`
+1. `pip3 install pymongo` — ถ้าเจอ error `externally-managed-environment` (พบบน Mac ที่ลง Python ผ่าน Homebrew)
+   ให้ใช้ `pip3 install --user --break-system-packages pymongo` แทน
 2. Jira credential — เหมือนกับ `gcp_jira_check_rsp.py` เป๊ะ (ใช้ config เดียวกันได้ถ้าตั้งไว้แล้ว): env vars
    `JIRA_URL`/`JIRA_PERSONAL_TOKEN`, หรือ `~/.mongo_jira_check.json` / `~/.rsp_sync_check.json`
 3. MongoDB connection string — ไปเอา connection string PROD (Local) แบบ read-only (`support_read_only`) จาก

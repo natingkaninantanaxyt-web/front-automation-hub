@@ -376,6 +376,18 @@
             </div>
 
             <div class="card card-warning">
+                <div class="card-header"><h3><i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> ถ้า pip3 install pymongo แล้วเจอ error "externally-managed-environment"</h3></div>
+                <div class="card-body">
+                    <p class="card-desc">เจอบ่อยบน Mac ที่ลง Python ผ่าน Homebrew — Homebrew ล็อกไม่ให้ pip ติดตั้ง package ทับ Python ของระบบตรงๆ (ตาม PEP 668) แก้โดยรันคำสั่งนี้แทน (ติดตั้งแบบ user-level เฉพาะบัญชีตัวเอง ไม่กระทบ Python ของระบบ):</p>
+                    <div class="cmd-block">
+                        <code>pip3 install --user --break-system-packages pymongo</code>
+                        <button class="copy-btn" onclick="copyCmd(this, this.parentElement.querySelector('code').textContent)"><i class="fa-regular fa-copy"></i></button>
+                    </div>
+                    <p class="card-desc" style="margin-top: 12px; margin-bottom: 0;">แล้ว run <code id="cmd-dry-run-inline-pymongo">python3 mongo_jira_check_assortment.py --dry-run</code> ใหม่อีกครั้ง (ชื่อไฟล์ให้ดูจากที่ดาวน์โหลดจริงในแท็บ "วิธีใช้งาน")</p>
+                </div>
+            </div>
+
+            <div class="card card-warning">
                 <div class="card-header"><h3><i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i> ถ้า run แล้ว error "Jira credentials not found"</h3></div>
                 <div class="card-body">
                     <p class="card-desc">ขึ้นครั้งแรกที่ run เพราะยังไม่เคยตั้ง Jira token ของตัวเองไว้บนเครื่องนี้ (ปกติสำหรับคนที่ไม่ได้ใช้ Claude Code) — ทำตามนี้ครั้งเดียวจบ:</p>
@@ -599,6 +611,7 @@ EOF</code>
 
             document.getElementById('cmd-dry-run').textContent = `python3 ${filename} --dry-run`;
             document.getElementById('cmd-live-run').textContent = `python3 ${filename}`;
+            document.getElementById('cmd-dry-run-inline-pymongo').textContent = `python3 ${filename} --dry-run`;
             document.getElementById('cmd-dry-run-inline-1').textContent = `python3 ${filename} --dry-run`;
             document.getElementById('cmd-dry-run-inline-2').textContent = `python3 ${filename} --dry-run`;
 
